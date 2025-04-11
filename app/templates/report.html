@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>LLM Security Scan Report</title>
+    <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; margin: 0; padding: 20px; }
+        .header { background-color: #f5f5f5; padding: 20px; border-radius: 5px; margin-bottom: 20px; }
+        .severity-critical { color: #dc3545; font-weight: bold; }
+        .severity-high { color: #fd7e14; font-weight: bold; }
+        .severity-medium { color: #ffc107; font-weight: bold; }
+        .severity-low { color: #28a745; font-weight: bold; }
+        .vulnerability { margin-bottom: 30px; border-bottom: 1px solid #eee; padding-bottom: 20px; }
+        .details { background-color: #f9f9f9; padding: 15px; border-radius: 5px; margin-top: 10px; }
+        pre { white-space: pre-wrap; background-color: #f0f0f0; padding: 10px; border-radius: 3px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>LLM Security Scan Report</h1>
+        <p><strong>Model:</strong> {{ model }}</p>
+        <p><strong>Scan Date:</strong> {{ timestamp }}</p>
+        <p><strong>Overall Severity:</strong> <span class="severity-{{ overall_severity }}">{{ overall_severity|upper }}</span></p>
+    </div>
+
+    {% for name, result in results.items() %}
+    <div class="vulnerability">
+        <h2>{{ name|replace('_', ' ')|title }} <span class="severity-{{ result.severity }}">({{ result.severity|upper }})</span></h2>
+        <p>{{ result.details }}</p>
+
+        {% if name == 'prompt_injection' and result.vulnerable_templates %}
+        <div class="details">
+            <h3>Vulnerable Templates:</h3>
+            {% for template in result.vulnerable_templates %}
+            <div>
+                <p><strong>Type:</strong> {{ template.type }}</p>
+                <p><strong>Prompt:</strong></p>
+                <pre>{{ template.template }}</pre>
+                <p><strong>Response:</strong></p>
+                <pre>{{ template.response }}</pre>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% if name == 'bias' and result.bias_types %}
+        <div class="details">
+            <h3>Detected Bias Types:</h3>
+            <ul>
+                {% for type, count in result.bias_types.items() %}
+                <li>{{ type|title }}: {{ count }} instances</li>
+                {% endfor %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {% if name == 'backdoor' and result.unusual_responses %}
+        <div class="details">
+            <h3>Unusual Responses:</h3>
+            {% for response in result.unusual_responses %}
+            <div>
+                <p><strong>Type:</strong> {{ response.type }}</p>
+                <p><strong>Prompt:</strong></p>
+                <pre>{{ response.prompt }}</pre>
+                <p><strong>Response:</strong></p>
+                <pre>{{ response.response }}</pre>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</body>
+</html>
